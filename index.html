@@ -353,14 +353,18 @@ function renderAccents(){
   ${a.data?`<img src="${a.data}" style="height:64px;max-width:100px;object-fit:cover;border:1px solid var(--bd);border-radius:6px"><button class="g" onclick="openAccentCrop(${i})">✂ Crop karein</button>`:`<span class="note">Koi image nahi</span>`}
   <input type="file" accept="image/*" onchange="upAccentImg(this,${i})">
   </div>
-  <div class="row" style="margin-top:6px"><div><label>Size likhein (jese 12x24)</label><input value="${a.size||""}" placeholder="12x24" oninput="updAccent(${i},'size',this.value)"></div>
+  <div class="row" style="margin-top:6px"><div><label>Size chunein</label><select onchange="updAccentSize(${i},this.value)">${["8x12","10x10","12x12","12x18","16x16","18x18","20x20","12x24","24x24","24x48","32x32","36x36","48x48"].map(s=>`<option value="${s}" ${a.size===s?"selected":""}>${s}</option>`).join("")}<option value="custom" ${!["8x12","10x10","12x12","12x18","16x16","18x18","20x20","12x24","24x24","24x48","32x32","36x36","48x48"].includes(a.size)?"selected":""}>Custom (khud likhein)</option></select>${!["8x12","10x10","12x12","12x18","16x16","18x18","20x20","12x24","24x24","24x48","32x32","36x36","48x48"].includes(a.size)?`<input style="margin-top:6px" value="${a.size||""}" placeholder="jese 10x10 ya 14x20" oninput="updAccentSizeText(${i},this.value)">`:""}</div>
   <div><label>Unit</label><select onchange="updAccent(${i},'unit',this.value)"><option value="in" ${a.unit!=="ft"?"selected":""}>inch</option><option value="ft" ${a.unit==="ft"?"selected":""}>feet</option></select></div></div>
-  <div style="margin-top:6px"><label>Floor pe kahan lage?</label><select onchange="updAccent(${i},'pos',this.value)">${posOpts.map(p=>`<option value="${p[0]}" ${a.pos===p[0]?"selected":""}>${p[1]}</option>`).join("")}</select></div>
+  <div style="margin-top:6px"><label>Floor pe kahan lage?</label><select onchange="updAccentPos(${i},this.value)">${posOpts.map(p=>`<option value="${p[0]}" ${a.pos===p[0]?"selected":""}>${p[1]}</option>`).join("")}</select></div>
   </div>`).join("");
 }
 function addAccent(){ACC.push({size:"12x24",unit:"in",pos:"center",data:""});saveAccents();refreshAccentImgs();renderAccents();calc()}
 function delAccent(i){ACC.splice(i,1);saveAccents();refreshAccentImgs();renderAccents();calc();setTimeout(()=>{try{if(window.TP)TP.draw()}catch(e){}},700)}
 function updAccent(i,k,v){ACC[i][k]=v;saveAccents();refreshAccentImgs();renderAccents();calc()}
+let _accSizeT=null;
+function updAccentSizeText(i,v){ACC[i].size=v;saveAccents();refreshAccentImgs();calc();clearTimeout(_accSizeT);_accSizeT=setTimeout(()=>{try{if(window.TP)TP.draw()}catch(e){}},400)}
+function updAccentSize(i,v){if(v==="custom"){ACC[i].size="";saveAccents();refreshAccentImgs();renderAccents();return}ACC[i].size=v;saveAccents();refreshAccentImgs();renderAccents();calc();if(window.TP)TP.draw()}
+function updAccentPos(i,v){ACC[i].pos=v;saveAccents();refreshAccentImgs();renderAccents();calc();if(window.TP)TP.draw()}
 function upAccentImg(el,i){const f=el.files&&el.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const k=Math.min(1,900/Math.max(im.width,im.height)),c=document.createElement("canvas");c.width=Math.max(1,Math.round(im.width*k));c.height=Math.max(1,Math.round(im.height*k));c.getContext("2d").drawImage(im,0,0,c.width,c.height);ACC[i].orig=c.toDataURL("image/jpeg",.88);openAccentCrop(i,im)};im.src=r.result};r.readAsDataURL(f);el.value=""}
 // Panel Crop overlay - bilkul baaki tiles jaisa: drag karke box banayein, hara box = jo save hoga
 function openAccentCrop(i,imgObj){
