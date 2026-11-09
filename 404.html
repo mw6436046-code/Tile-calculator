@@ -87,7 +87,16 @@ button.bond{background:var(--ac2)}
 <select id="sk" onchange="calc()"><option value="0">Nahi lagani</option><option value="4" selected>4 inch</option><option value="6">6 inch</option><option value="8">8 inch</option><option value="12">12 inch</option><option value="c">Custom</option></select></div>
 <div><label>Darwaza/jagah minus (feet)</label><input id="door" type="number" inputmode="decimal" oninput="calc()"></div></div>
 <div id="skc" class="row" style="display:none"><div><label>Custom height (inch)</label><input id="skv" type="number" inputmode="decimal" oninput="calc()"></div></div>
-<div class="note">Skirting isi tile ki strips kaat kar banti hai (tile ki lambi side ki taraf).</div>
+<div class="row"><div><label>Skirting tile konsi?</label><select id="skMode" onchange="calc()"><option value="floor" selected>Floor wali tile se kaat kar</option><option value="alag">Alag skirting tile</option></select></div>
+<div><label>Skirting hisaab totals me?</label><select id="skShow" onchange="calc()"><option value="1" selected>Dikhayen (hide/show hoga)</option><option value="0">Chhupayen</option></select></div></div>
+<div id="skAlag" style="display:none">
+<div class="row"><div><label>Skirting tile ka size (inch, jese 12x24)</label><input id="skTileSize" placeholder="12x24" oninput="calc()"></div>
+<div><label>Ek box me kitni tiles</label><input id="skBox" type="number" inputmode="decimal" placeholder="jese 6" oninput="calc()"></div></div>
+<div class="row"><div><label>Box packing (Sq Meter)</label><input id="skBoxSqm" type="number" inputmode="decimal" placeholder="jese 1.44" oninput="calc()"></div>
+<div><label>Meter Rate (Rs / sqm)</label><input id="skRateSqm" type="number" inputmode="decimal" placeholder="jese 1780" oninput="calc()"></div></div>
+<div class="note">Alag tile se skirting ka hisaab floor wali tiles se <b>alag</b> hoga — neechay totals me alag box me dikhega.</div>
+</div>
+<div class="note">Floor wali mode me: Skirting isi tile ki strips kaat kar banti hai (tile ki lambi side ki taraf).</div>
 <div id="skImg" style="margin-top:10px"></div>
 </div>
 
@@ -164,7 +173,7 @@ function switchTab(t){
  else{document.querySelectorAll('.tab-btn')[2].classList.add('active');$("tab-wash").classList.add('active');}
 }
 function load(){try{const s=JSON.parse(localStorage.getItem("tc")||"null");if(s){rooms=s.rooms;for(const k in s.f)if($(k))$(k).value=s.f[k]}}catch(e){}if(!rooms.length)rooms=[{n:"Kamra 1",l:"",lu:"ft",w:"",wu:"ft"}]}
-let _saveT=null;function save(){if(_saveT)return;_saveT=setTimeout(()=>{_saveT=null;saveNow()},400)}function saveNow(){try{const f={};["preset","waste","cw","ch","cu","box","boxSqm","boxSqft","rateSqm","rateSqft","sk","door","skv","bondArea","bondCoverage","bondWeight","bondWaste","bondRate"].forEach(k=>{if($(k))f[k]=$(k).value});localStorage.setItem("tc",JSON.stringify({rooms,f}))}catch(e){}}
+let _saveT=null;function save(){if(_saveT)return;_saveT=setTimeout(()=>{_saveT=null;saveNow()},400)}function saveNow(){try{const f={};["preset","waste","cw","ch","cu","box","boxSqm","boxSqft","rateSqm","rateSqft","sk","door","skv","skMode","skTileSize","skBox","skBoxSqm","skRateSqm","skShow","bondArea","bondCoverage","bondWeight","bondWaste","bondRate"].forEach(k=>{if($(k))f[k]=$(k).value});localStorage.setItem("tc",JSON.stringify({rooms,f}))}catch(e){}}
 function addRoom(){rooms.push({n:"Kamra "+(rooms.length+1),l:"",lu:"ft",w:"",wu:"ft"});draw();calc()}
 function delRoom(i){rooms.splice(i,1);if(!rooms.length)addRoom();draw();calc()}
 function upd(i,k,v){rooms[i][k]=v;calc()}
@@ -185,8 +194,27 @@ rooms.forEach(r=>{const L=(+r.l||0)*toFt[r.lu],W=(+r.w||0)*toFt[r.wu],A=L*W,P2=2
 const t=ta>0?Math.ceil(A*wf/ta-1e-9):0;totTiles+=t;
 if(A>0)rows+=`<div class="res"><span>${r.n}<br><small style="color:var(--mu)">${f2(L)}×${f2(W)} ft</small></span><b>${f2(A)} sq ft<br>${t} tiles</b></div>`});
 const skH=$("sk").value=="c"?+$("skv").value||0:+$("sk").value;
-let sk="",skTiles=0;
-if(skH>0&&totP>0&&tw>0){
+const skMode=$("skMode")?$("skMode").value:"floor";
+if($("skAlag"))$("skAlag").style.display=skMode=="alag"?"block":"none";
+let sk="",skTiles=0,skBoxes=0,skSqm=0,skCost=0,skPerTileSqm=0,skTileLabel="";
+if(skMode=="alag"&&skH>0&&totP>0){
+const m=String($("skTileSize").value||"").toLowerCase().replace(/\s/g,"").match(/([0-9.]+)x([0-9.]+)/);
+const run=Math.max(0,totP-(+$("door").value||0));
+if(!m){sk=`<div class="res"><span>Skirting (alag tile)</span><b style="color:#c33">Skirting tile ka size likhein (jese 12x24)</b></div>`}
+else{const sw_=Math.min(+m[1],+m[2]),sl_=Math.max(+m[1],+m[2]);skTileLabel=f2(sw_)+"×"+f2(sl_)+" inch";
+const per=Math.floor(sw_/skH+1e-9);
+if(per<1){sk=`<div class="res"><span>Skirting (alag tile)</span><b style="color:#c33">Is tile ki chorai (${f2(sw_)} in) se ${skH} inch strip nahi banti</b></div>`}
+else{const pieces=Math.ceil(run*12/sl_-1e-9),pw=Math.ceil(pieces*wf-1e-9);skTiles=Math.ceil(pw/per-1e-9);
+const skBx=+$("skBox").value||0;skBoxes=skBx>0?Math.ceil(skTiles/skBx-1e-9):0;
+skPerTileSqm=(sw_*sl_/144)/10.7639104167;
+const skBoxSqm=+$("skBoxSqm").value||0;if(skBoxSqm>0&&skBx>0)skPerTileSqm=skBoxSqm/skBx;
+skSqm=skTiles*skPerTileSqm;const skRate=+$("skRateSqm").value||0;skCost=skRate>0?skSqm*skRate:0;
+sk=`<div class="res"><span>Skirting ki lambai (alag tile)</span><b>${f2(run)} ft / ${f2(run/3.28084)} m</b></div>
+<div class="res"><span>Skirting tile ka size</span><b>${skTileLabel}</b></div>
+<div class="res"><span>1 tile se skirting piece</span><b>${per} piece (${f2(sl_)}×${skH} inch)</b></div>
+<div class="res"><span>Skirting pieces (wastage ke saath)</span><b>${pw}</b></div>
+<div class="res"><span>Skirting ke liye tiles</span><b>${skTiles}</b></div>`}}}
+else if(skH>0&&totP>0&&tw>0){
 const run=Math.max(0,totP-(+$("door").value||0)),per=Math.floor(tw/skH+1e-9);
 if(per<1)sk=`<div class="res"><span>Skirting</span><b style="color:#c33">Is tile ki chorai (${f2(tw)} in) se ${skH} inch strip nahi banti</b></div>`;
 else{const pieces=Math.ceil(run*12/tl-1e-9),pw=Math.ceil(pieces*wf-1e-9);skTiles=Math.ceil(pw/per-1e-9);
@@ -194,7 +222,7 @@ sk=`<div class="res"><span>Skirting ki lambai</span><b>${f2(run)} ft / ${f2(run/
 <div class="res"><span>1 tile se skirting piece</span><b>${per} piece (${f2(tl)}×${skH} inch)</b></div>
 <div class="res"><span>Skirting pieces (wastage ke saath)</span><b>${pw}</b></div>
 <div class="res"><span>Skirting ke liye tiles</span><b>${skTiles}</b></div>`}}
-const all=totTiles+skTiles,bx=+$("box").value;
+const all=(skMode=="alag"?totTiles:totTiles+skTiles),bx=+$("box").value;
 let boxSqm = +$("boxSqm").value || 0;
 let boxSqft = +$("boxSqft").value || 0;
 const SQFT_PER_SQM = 10.7639104167;
@@ -255,6 +283,7 @@ $("out").innerHTML=`<h2>Hisaab - 100% Exact</h2>
 ${rows}
 <div class="res"><span>Floor tiles (+${$("waste").value||0}% wastage)</span><b>${totTiles}</b></div>
 ${sk}
+${($("skShow")?$("skShow").value:"1")=="1"&&skMode=="alag"&&skTiles>0?`<details open style="background:#fdf2e9;border:1px solid #f59e0b;border-radius:8px;padding:8px;margin-top:6px"><summary style="cursor:pointer;font-weight:700;color:#b45309">🧱 Skirting ka alag hisaab — dabao to chhupao / dikhao</summary><div class="res"><span>Skirting tile ka size</span><b>${skTileLabel}</b></div><div class="res"><span>Skirting tiles</span><b>${skTiles}</b></div><div class="res"><span>Skirting boxes ${+$("skBox").value>0?`(${$("skBox").value} per box)`:""}</span><b>${skBoxes>0?skBoxes+" box lene parenge":"—"}</b></div><div class="res"><span>Skirting meter</span><b>${f4(skSqm)} sqm</b></div>${+$("skRateSqm").value>0?`<div class="res"><span>Skirting paisay</span><b>Rs ${f2(skCost)}<br><small style="color:var(--mu)">${f4(skSqm)} sqm × Rs ${f2(+$("skRateSqm").value)}/sqm</small></b></div>`:""}${+$("skRateSqm").value>0&&typeof totalCost!=="undefined"?`<div class="res"><span><b>Floor + Skirting kul paisay</b></span><b>Rs ${f2(totalCost+skCost)}</b></div>`:""}</details>`:""}
 <div class="res"><span><b>Kul tiles</b></span><b class="big">${all}</b></div>
 <div class="res" style="background:var(--bg);border:1px solid var(--ac);border-radius:8px;margin-top:6px;padding:10px"><span><b>📦 Packing Formula - EXACT</b><br><small style="color:var(--mu)">1 Box = ${boxSqm>0?f4(boxSqm)+' sqm':f4(perTileSqm_exact*bx)+' sqm'} / ${bx||0} Tiles<br>Formula: 1 Tile = Box Packing ÷ Tiles per Box = ${f6(perTileSqm_exact)} sqm</small></span><b style="color:var(--ac)">${f4(perTileSqm_exact)} sqm<br>${f4(perTileSqft_exact)} sq ft<br><small style="font-weight:normal">Exact: ${f6(perTileSqm_exact)}</small><br><small>Total = ${f4(totalSqmFromTiles_exact)} sqm</small></b></div>
 ${bx>0&&all>0?`<div class="res" style="border:2px solid var(--ac);background:var(--bg)"><span><b>Boxes (${bx} per box) - Sahi Hisaab</b><br><small style="color:var(--mu)">${all} tiles ÷ ${bx} = ${f4(totalBoxes_exact)} box</small></span><b style="color:var(--ac)">${remainingTiles>0 ? `${fullBoxes} box + ${remainingTiles} tile<br><small style="color:var(--mu)">Matlab ${totalBoxesCeil} box lena parega</small>` : `${fullBoxes} box`}<br><small style="color:var(--mu)">${f4(totalSqmFromBoxes_exact)} sqm / ${f2(totalSqftFromBoxes_exact)} sq ft (ceil boxes ka)</small></b></div>`:""}
