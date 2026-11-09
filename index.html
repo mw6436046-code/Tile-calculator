@@ -3,7 +3,7 @@
 <html lang="ur">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <title>Tile Calculator - Bond Calculator</title>
 <link rel="manifest" href="manifest.json">
 <meta name="theme-color" content="#b4501e">
@@ -15,7 +15,13 @@
 :root{--bg:#f4f1ea;--card:#fff;--tx:#1d1d1b;--mu:#6b6b66;--ac:#b4501e;--bd:#ddd8cc;--ac2:#0d6efd}
 @media(prefers-color-scheme:dark){:root{--bg:#1c1b19;--card:#292723;--tx:#f0ede6;--mu:#a09b90;--ac:#e8854f;--bd:#443f37;--ac2:#6ea8fe}}
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);padding:12px;max-width:680px;margin:auto}
+html,body{overflow-x:hidden;width:100%}
+.card,.room,.res,.navbar,.tab-content{max-width:100%}
+table{max-width:100%;display:block;overflow-x:auto}
+canvas{max-width:100%;height:auto;display:block}
+img{max-width:100%;height:auto}
+body{margin:0;font-family:system-ui,sans-serif;background:var(--bg);color:var(--tx);padding:12px;width:100%;max-width:680px;margin:auto}
+@media(max-width:720px){body{padding:8px;max-width:100%}.card{padding:10px}.navbar{padding:4px}h1{font-size:18px}}
 h1{font-size:20px;margin:6px 0 12px}
 .navbar{display:flex;gap:8px;margin-bottom:14px;background:var(--card);border:1px solid var(--bd);border-radius:12px;padding:6px}
 .tab-btn{flex:1;padding:12px 8px;border:0;border-radius:8px;background:transparent;color:var(--mu);font-weight:600;cursor:pointer;font-size:14px;transition:0.2s}
