@@ -1,1 +1,32 @@
-{"id":"/","name":"Tile Business Calculator","short_name":"Tile Calc","description":"Tile, Bond aur Washroom calculator (offline)","start_url":"/","scope":"/","display":"standalone","orientation":"portrait","background_color":"#f4f1ea","theme_color":"#b4501e","icons":[{"src":"icon-192.png","sizes":"192x192","type":"image/png","purpose":"any"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"any"},{"src":"icon-512.png","sizes":"512x512","type":"image/png","purpose":"maskable"}]}
+{
+  "id": "./index.html",
+  "name": "Tile Business Calculator",
+  "short_name": "Tile Calc",
+  "description": "Tile, Bond aur Washroom calculator (offline)",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f4f1ea",
+  "theme_color": "#b4501e",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
