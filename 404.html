@@ -51,7 +51,7 @@ button.bond{background:var(--ac2)}
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
-<div style="display:flex;gap:8px;align-items:center;justify-content:space-between"><h1 id="appTitle" style="margin:6px 0 12px;user-select:none;-webkit-user-select:none;cursor:pointer" onselectstart="return false" ondragstart="return false">🧱 Tile Business Calculator</h1><button id="settingBtn" onclick="openSettings()" style="white-space:nowrap;display:none">⚙️ Setting</button><button id="adminBtn" onclick="openAdmin()" style="white-space:nowrap;background:#1d1d1b;color:#fff;display:none">🔐 Admin</button><span id="adminState" style="font-size:11px;color:var(--mu)"></span></div>
+<div style="display:flex;gap:8px;align-items:center;justify-content:space-between"><h1 id="appTitle" style="margin:6px 0 12px">🧱 Tile Business Calculator</h1><button id="settingBtn" onclick="openSettings()" style="white-space:nowrap;display:none">⚙️ Setting</button><button id="adminBtn" onclick="openAdmin()" style="white-space:nowrap;background:#1d1d1b;color:#fff;display:none">🔐 Admin</button><span id="adminState" style="font-size:11px;color:var(--mu)"></span></div>
 
 <div class="navbar">
 <button class="tab-btn active" onclick="switchTab('tiles')">Tiles Calculator</button>
@@ -196,7 +196,7 @@ const [a,b]=tileIn(),tw=Math.min(a,b),tl=Math.max(a,b),ta=a*b/144,wf=1+(+$("wast
 let totA=0,totP=0,totTiles=0,rows="";
 rooms.forEach(r=>{const L=(+r.l||0)*toFt[r.lu],W=(+r.w||0)*toFt[r.wu],A=L*W,P2=2*(L+W);totA+=A;totP+=P2;
 const t=ta>0?Math.ceil(A*wf/ta-1e-9):0;totTiles+=t;
-if(A>0)rows+=`<div class="res"><span>${r.n}<br><small style="color:var(--mu)">${f2(L)}×${f2(W)} ft</small></span><b>${f2(A)} sq ft<br>${t} tiles</b></div>`});
+if(A>0)rows+=`<div class="res"><span>${r.n}<br><small style="color:var(--mu)">${f2(L)}×${f2(W)} ft</small></span><b>${f2(A)} sq ft<br>${t} tiles</b></div>`;if(A>0&&(L<2||W<2))rows+=`<div class="note" style="background:#fff3e0;border:1px solid #f59e0b;color:#7c2d12">⚠️ <b>${r.n} ka size badlo</b> — ${f2(Math.min(L,W))} ft bohot chhota hai. 2 ft se bara likhein, warna nazara nahi banega.</div>`});
 const skH=$("sk").value=="c"?+$("skv").value||0:+$("sk").value;
 const skMode=$("skMode")?$("skMode").value:"floor";
 if($("skAlag"))$("skAlag").style.display=skMode=="alag"?"block":"none";
@@ -569,14 +569,14 @@ function fitSize(t){const im=IM[t];if(!im)return;const ia=Math.max(im.width,im.h
  if(t=="T"){$("preset").value=String(best.i);calc();render();return}(t=="F"?S.fsz:S.sz).s=String(best.i);render()}
 const imgBlock=t=>`<div style="margin-top:8px"><label>${TY[t][0]} tile ki image (catalog/poori image bhi chalegi, tile khud pehchan li jaye gi)</label>`+(IMG[t]?`<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><img src="${IMG[t]}" style="height:72px;max-width:120px;object-fit:contain;border:1px solid var(--bd);border-radius:6px;background:#fff"><div style="display:flex;flex-direction:column;gap:6px">${ORIG[t]?`<button class="g" onclick="W.crop('${t}')">✂ Tile badlein / crop</button>`:""}<button class="g" onclick="W.rmImg('${t}')">✕ image hatao</button></div></div>`+shapeInfo(t):`<input type="file" accept="image/*" onchange="W.up('${t}',this)">`)+`</div>`;
 
-function floorGrid(wIn,hIn,a,b,st){const c=document.createElement("canvas");c.width=Math.max(1,Math.round(wIn*st));c.height=Math.max(1,Math.round(hIn*st));const x=c.getContext("2d");
+function floorGrid(wIn,hIn,a,b,st){st=Math.min(st,1600/Math.max(1,Math.max(wIn,hIn)));const c=document.createElement("canvas");c.width=Math.max(1,Math.round(wIn*st));c.height=Math.max(1,Math.round(hIn*st));const x=c.getContext("2d");
  x.fillStyle="#e4dac6";x.fillRect(0,0,c.width,c.height);
  for(let r=0;r*b<hIn-1e-9;r++)for(let q=0;q*a<wIn-1e-9;q++){x.save();x.beginPath();x.rect(q*a*st,r*b*st,a*st,b*st);x.clip();tileAt(x,"T",q*a*st,r*b*st,a*st,b*st,0);x.restore()}
  // Floor Accent Panels: window.__accents se, floor ke hi canvas pe draw (perspective + top dono me aa jayega)
  try{(window.__accents||[]).forEach(ac=>{if(!ac.im||!(ac.w>0)||!(ac.h>0))return;let pw=Math.min(ac.w,wIn),ph=Math.min(ac.h,hIn);let px=0,py=0;const pos=ac.pos||"center";if(pos==="center"){px=(wIn-pw)/2;py=(hIn-ph)/2}else if(pos==="left"){px=0;py=(hIn-ph)/2}else if(pos==="right"){px=wIn-pw;py=(hIn-ph)/2}else if(pos==="top"){px=(wIn-pw)/2;py=0}else if(pos==="bottom"){px=(wIn-pw)/2;py=hIn-ph}else if(pos==="tl"){px=0;py=0}else if(pos==="tr"){px=wIn-pw;py=0}else if(pos==="bl"){px=0;py=hIn-ph}else if(pos==="br"){px=wIn-pw;py=hIn-ph}drawCover(x,ac.im,px*st,py*st,pw*st,ph*st);x.strokeStyle="rgba(0,0,0,.4)";x.lineWidth=2;x.strokeRect(px*st,py*st,pw*st,ph*st)})}catch(e){}
  return c}
 function roomPersp(cv,L,W,skH){
- const [a,b]=tileIn();if(!(a>0&&b>0&&L>0&&W>0))return false;
+ const [a,b]=tileIn();if(!(a>0&&b>0&&L>0&&W>0))return false;if(L<2||W<2||L>80||W>80||Math.max(L,W)/Math.min(L,W)>10)return false;
  const Li=L*12,Wi=W*12,A=Math.min(Li,Wi),D=Math.max(Li,Wi),H=96,st=Math.min(6,1600/D),ta=Li<=Wi?a:b,tb=Li<=Wi?b:a;
  const FR=floorGrid(A,D,ta,tb,st),fw=FR.width,fh=FR.height;
  const tl=Math.max(a,b),tn=Math.min(a,b),sh=Math.min(skH,96); // skirting 96" tak, tile chorai pe cap nahilet strip=null;
@@ -586,7 +586,7 @@ function roomPersp(cv,L,W,skH){
   if(strip)for(let px=0;px<c.width;px+=strip.width){let _rem=Math.round(sh*st),_y=c.height;while(_rem>0){const _ch=Math.min(Math.round(tn*st),_rem);x.drawImage(strip,0,Math.round(tn*st)-_ch,strip.width,_ch,px,_y-_ch,strip.width,_ch);_y-=_ch;_rem-=_ch;}}
   if(strip){x.strokeStyle="rgba(0,0,0,.35)";x.lineWidth=1.5;x.beginPath();x.moveTo(0,c.height-sh*st);x.lineTo(c.width,c.height-sh*st);x.stroke()}
   return c};
- const CW=900,mg=14,k=CW*.97/A,dc=Math.max(A,H)*.9,ey=H*.78,CH=Math.round(k*H+2*mg),cx=CW/2,cy=mg+k*(H-ey);
+ const CW=900,mg=14;let k=CW*.97/A;k=Math.min(k,(1100-2*mg)/H);const dc=Math.max(A,H)*.9,ey=H*.78,CH=Math.round(k*H+2*mg),cx=CW/2,cy=mg+k*(H-ey);
  cv.width=CW;cv.height=CH;const ctx=cv.getContext("2d");ctx.imageSmoothingQuality="high";
  const sf=z=>k*dc/(z+dc);ctx.fillStyle="#f6f3ec";ctx.fillRect(0,0,CW,CH);
  const yb=cy+sf(0)*ey,yk=cy+sf(D)*ey;
@@ -602,8 +602,8 @@ function roomPersp(cv,L,W,skH){
  ctx.strokeStyle="rgba(40,30,20,.45)";ctx.lineWidth=2;
  [[[bx,tB],[bx,bB]],[[bx+A*sb,tB],[bx+A*sb,bB]],[[bx,tB],[bx+A*sb,tB]],[[bx,bB],[bx+A*sb,bB]],[[xl0,tN],[bx,tB]],[[xr0,tN],[bx+A*sb,tB]],[[xl0,bN],[bx,bB]],[[xr0,bN],[bx+A*sb,bB]]].forEach(l=>{ctx.beginPath();ctx.moveTo(l[0][0],l[0][1]);ctx.lineTo(l[1][0],l[1][1]);ctx.stroke()});
  return true}
-function roomTop(cv,L,W){const [a,b]=tileIn();if(!(a>0&&b>0&&L>0&&W>0))return false;
- const Li=L*12,Wi=W*12,pad=26,CW=900,st=(CW-2*pad)/Li,F=floorGrid(Li,Wi,a,b,st);
+function roomTop(cv,L,W){const [a,b]=tileIn();if(!(a>0&&b>0&&L>0&&W>0))return false;if(L<2||W<2||L>80||W>80||Math.max(L,W)/Math.min(L,W)>10)return false;
+ const Li=L*12,Wi=W*12,pad=26,CW=900;let st=(CW-2*pad)/Li;st=Math.min(st,1500/Math.max(1,Wi),1500/Math.max(1,Li));const F=floorGrid(Li,Wi,a,b,st);
  cv.width=CW;cv.height=Math.round(F.height+2*pad);const x=cv.getContext("2d");x.fillStyle="#f6f3ec";x.fillRect(0,0,cv.width,cv.height);
  x.drawImage(F,pad,pad);x.strokeStyle="#4a3f35";x.lineWidth=3;x.strokeRect(pad,pad,F.width,F.height);
  x.fillStyle="#6b5d4f";x.font="bold 18px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(f2(L)+" ft",CW/2,pad/2);
@@ -615,6 +615,7 @@ window.TP={_busy:false,_pending:false,draw(){if(this._busy){this._pending=true;r
  const vb=(id,t)=>`<div style="font-weight:600;color:var(--mu);margin:8px 0 4px">${t}</div><canvas id="${id}" style="width:100%;border:1px solid var(--bd);border-radius:8px;background:#f4f1ea"></canvas><div style="text-align:center;margin:6px 0"><button class="g" onclick="W.dl('${id}')">📥 Image save karein</button></div>`;
  let h="",jobs=[];
  rooms.forEach((r,i)=>{const L=(+r.l||0)*toFt[r.lu],Wd=(+r.w||0)*toFt[r.wu];if(!(L>0&&Wd>0))return;
+  if(L<2||Wd<2||L>80||Wd>80||Math.max(L,Wd)/Math.min(L,Wd)>10){h+=`<div class="room"><div class="rt"><b>${r.n||"Kamra "+(i+1)}</b><span>${f2(L)} × ${f2(Wd)} ft</span></div><div class="note" style="background:#fff3e0;border:1px solid #f59e0b;color:#7c2d12">⚠️ <b>Ye size badlo</b> — nazara banane ke liye lambai aur chorai dono <b>2 ft se 80 ft</b> ke darmiyan honi chahiye. Abhi ${f2(Math.min(L,Wd))} ft hai. Poora size likhte hi nazara khud ban jayega, app hang nahi hogi.</div></div>`;return;}
   h+=`<div class="room"><div class="rt"><b>${r.n||"Kamra "+(i+1)}</b><span>${f2(L)} × ${f2(Wd)} ft</span></div>`+vb("tpV"+i,"Kamray ka nazara")+`<details><summary style="cursor:pointer;color:var(--mu)">Upar se naqsha (tile ka layout)</summary>`+vb("tpT"+i,"Upar se")+`</details></div>`;
   jobs.push([i,L,Wd])});
  $("tPrev").innerHTML=h;
@@ -936,12 +937,6 @@ setAdminState();
 let _titleTaps=[],_adminUnlocked=false;
 function showAdminButtons(){_adminUnlocked=true;try{const s=document.getElementById("settingBtn");if(s)s.style.display="";const a=document.getElementById("adminBtn");if(a)a.style.display="";}catch(e){}}
 function hideAdminButtons(){_adminUnlocked=false;try{const s=document.getElementById("settingBtn");if(s)s.style.display="none";const a=document.getElementById("adminBtn");if(a)a.style.display="none";}catch(e){}}
-// Computer: Ctrl+Shift+A dabao -> Admin khul jayega (mouse se 5 tap ki zaroorat nahi)
-try{
-  document.addEventListener("keydown",e=>{
-    if(e.ctrlKey&&e.shiftKey&&(e.key==="A"||e.key==="a")){e.preventDefault();showAdminButtons();openAdmin();}
-  });
-}catch(e){}
 try{
   document.getElementById("appTitle").style.cursor="pointer";
   document.getElementById("appTitle").addEventListener("click",()=>{
