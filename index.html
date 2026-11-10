@@ -46,9 +46,12 @@ button.bond{background:var(--ac2)}
 .note{font-size:12px;color:var(--mu);margin-top:6px}
 .highlight{background:#eef6ff;border:1px solid var(--ac2);border-radius:10px;padding:12px}
 </style>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 </head>
 <body>
-<h1>🧱 Tile Business Calculator</h1>
+<div style="display:flex;gap:8px;align-items:center;justify-content:space-between"><h1 id="appTitle" style="margin:6px 0 12px">🧱 Tile Business Calculator</h1><button onclick="openSettings()" style="white-space:nowrap">⚙️ Setting</button><button id="adminBtn" onclick="openAdmin()" style="white-space:nowrap;background:#1d1d1b;color:#fff">🔐 Admin</button><span id="adminState" style="font-size:11px;color:var(--mu)"></span></div>
 
 <div class="navbar">
 <button class="tab-btn active" onclick="switchTab('tiles')">Tiles Calculator</button>
@@ -81,7 +84,7 @@ button.bond{background:var(--ac2)}
 <div class="row"><div><label>Box ka Rate (Auto: Packing × Meter Rate)</label><div id="boxRate" style="padding:10px;background:#fff7ed;border:1px solid var(--ac);border-radius:8px;font-weight:bold;color:var(--ac)">Rs 0</div></div><div><label>1 Tile ka Rate</label><div id="tileRate" style="padding:10px;background:var(--bg);border-radius:8px;font-weight:bold">Rs 0</div></div></div>
 </div>
 
-<div class="card">
+<div class="card" id="cardSkirt">
 <h2>3. Skirting</h2>
 <div class="row"><div><label>Skirting chorai (height)</label>
 <select id="sk" onchange="calc()"><option value="0">Nahi lagani</option><option value="4" selected>4 inch</option><option value="6">6 inch</option><option value="8">8 inch</option><option value="12">12 inch</option><option value="c">Custom</option></select></div>
@@ -101,11 +104,11 @@ button.bond{background:var(--ac2)}
 <div id="skImg" style="margin-top:10px"></div>
 </div>
 
-<div class="card"><h2>3A. Floor Panel / Accent Tile (alag design)</h2>
+<div class="card" id="cardPanel"><h2>3A. Floor Panel / Accent Tile (alag design)</h2>
 <div class="note" style="margin:0 0 8px">Floor ke center ya kisi side pe alag panel / border tile lagani ho to yahan add karein. Multi add ho sakta hai. Image upload karein, size likhein (jese 12x24, 24x24, 24x48), unit inch/feet chunein — nazare me usi shape me wo panel floor pe aa jayega. Image panel ke shape me auto crop ho jayegi.</div>
 <div id="accentBox"></div>
 <div style="text-align:center;margin-top:8px"><button class="g" onclick="addAccent()">＋ Naya Panel add karein</button></div></div>
-<div class="card"><h2>4. Kamray ka Nazara</h2><div class="note" style="margin:0 0 6px">Tile ki image upload karein (Section 2 mein), to har kamray mein wohi tile lagi hui nazar aaye gi. Skirting bhi isi tile ki dikhai jati hai.</div><div id="tPrev"></div></div>
+<div class="card" id="cardNazara"><h2>4. Kamray ka Nazara</h2><div class="note" style="margin:0 0 6px">Tile ki image upload karein (Section 2 mein), to har kamray mein wohi tile lagi hui nazar aaye gi. Skirting bhi isi tile ki dikhai jati hai.</div><div id="tPrev"></div></div>
 <div class="card" id="out"></div>
 </div>
 
@@ -296,6 +299,10 @@ ${bx>0&&all>0?`<div class="res" style="border:2px solid var(--ac);background:var
 ${rateSqm>0?`<div class="res" style="background:#fef3c7;border:2px solid #f59e0b;border-radius:8px"><span><b>💰 Paison ka Hisaab (Floor)</b><br><small style="color:var(--mu)">${f4(effectiveBoxSqm)} sqm (1 Box) × Rs ${f2(rateSqm)}/sqm<br>= Box Rate Rs ${f2(boxRate)}<br>1 Tile = Rs ${f2(tileRate)}</small></span><b style="color:#b45309">Floor Total: Rs ${f2(totalCost)}<br><small style="color:var(--mu)">${all} tiles × Rs ${f2(tileRate)}<br>Ya ${f4(totalSqmFromTiles_exact)} sqm × ${f2(rateSqm)}</small><br><small>${fullBoxes>0?`${fullBoxes} box × ${f2(boxRate)} = Rs ${f2(fullBoxes*boxRate)} + ${remainingTiles} tile × ${f2(tileRate)} = Rs ${f2(remainingTiles*tileRate)}`:`${totalBoxesCeil} box × ${f2(boxRate)}`}</small></b></div>`:""}
 ${skMode=="alag"&&skTiles>0?`<div class="res" style="background:#fdf2e9;border:2px solid #f59e0b;border-radius:8px"><span><b>🧱 Skirting ka Apna Total</b><br><small style="color:var(--mu)">${skTileLabel} (${skRukhLabel}) | ${skTiles} tiles${skBoxes>0?` | ${skBoxes} box`:""} | ${f4(skSqm)} sqm${+$("skRateSqm").value>0?` × Rs ${f2(+$("skRateSqm").value)}/sqm`:""}</small></span><b style="color:#b45309">Skirting Total: ${+$("skRateSqm").value>0?`Rs ${f2(skCost)}`:`<small>Rate likhein (Section 3)</small>`}</b></div>`:""}
 ${skMode=="alag"&&skTiles>0&&rateSqm>0&&+$("skRateSqm").value>0?`<div class="res" style="background:#b4501e;border-radius:8px"><span><b style="color:#fff">🧾 GRAND TOTAL (Floor + Skirting)</b><br><small style="color:#ffe8d6">Floor Rs ${f2(totalCost)} + Skirting Rs ${f2(skCost)}</small></span><b style="color:#fff;font-size:18px">Rs ${f2(totalCost+skCost)}</b></div>`:""}
+${(typeof SETTINGS!=="undefined"&&SETTINGS.extras&&SETTINGS.extras.length)?SETTINGS.extras.map(e=>`<div class="res"><span>➕ ${e.name}</span><b>Rs ${f2(+e.amt||0)}</b></div>`).join(""):""}
+${(typeof SETTINGS!=="undefined"&&SETTINGS.extras&&SETTINGS.extras.length)?`<div class="res" style="background:#1d1d1b;border-radius:8px"><span><b style="color:#fff">💰 FINAL TOTAL (sab kuch mila kar)</b><br><small style="color:#ccc">${skMode=="alag"&&skTiles>0&&rateSqm>0&&+$("skRateSqm").value>0?`Grand Total + Extras`:`Floor Total + Extras`}</small></span><b style="color:#fff;font-size:18px">Rs ${f2(((skMode=="alag"&&skTiles>0&&rateSqm>0&&+$("skRateSqm").value>0)?(totalCost+skCost):totalCost)+SETTINGS.extras.reduce((s,e)=>s+(+e.amt||0),0))}</b></div>`:""}
+${(typeof SETTINGS!=="undefined"&&SETTINGS.shopName)?`<div class="res"><span>🏪 Dukaan</span><b>${SETTINGS.shopName}${SETTINGS.shopPhone?`<br><small style="color:var(--mu)">${SETTINGS.shopPhone}</small>`:""}</b></div>`:""}
+${(typeof SETTINGS!=="undefined"&&SETTINGS.note)?`<div class="note" style="margin-top:8px">📝 ${SETTINGS.note}</div>`:""}
 `;
 save();
 // Auto fill bond area from tiles calculation
@@ -765,6 +772,160 @@ window.W={up:upImg,crop:openCrop,fit:fitSize,rmImg,dl:id=>{const c=$(id||"wCv");
  reset:()=>{if(confirm("Washroom ka sab kuch saaf kar dein?")){S=fresh();render()}}};
 render();
 })();
+</script>
+
+<script>
+// ============ ⚙️ APP SETTING - khud changing karo, AI ki zaroorat nahi ============
+let SETTINGS={};try{SETTINGS=JSON.parse(localStorage.getItem("tcsettings")||"{}")||{}}catch(e){SETTINGS={}}
+if(!SETTINGS.extras)SETTINGS.extras=[];
+function applySettings(){
+  try{
+    if(SETTINGS.appTitle&&$("appTitle"))$("appTitle").textContent=SETTINGS.appTitle;
+    if($("cardSkirt"))$("cardSkirt").style.display=SETTINGS.hideSkirt?"none":"";
+    if($("cardPanel"))$("cardPanel").style.display=SETTINGS.hidePanel?"none":"";
+    if($("cardNazara"))$("cardNazara").style.display=SETTINGS.hideNazara?"none":"";
+  }catch(e){}
+}
+function openSettings(){
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;overflow-y:auto;padding:12px;box-sizing:border-box";
+  const ex=(SETTINGS.extras||[]).map((e,i)=>`<div class="row" data-ex="${i}"><div><input placeholder="Naam - jese Mazdoori" value="${String(e.name||"").replace(/"/g,"&quot;")}"></div><div><input type="number" placeholder="Rs" value="${e.amt||""}"></div><div style="flex:0 0 44px"><button class="g" type="button" onclick="this.closest('[data-ex]').remove()">✕</button></div></div>`).join("");
+  ov.innerHTML=`<div style="max-width:680px;margin:auto;background:var(--card,#fff);color:var(--tx,#111);border-radius:12px;padding:14px">
+  <h2 style="margin:0 0 4px">⚙️ App Setting — khud changing karo</h2>
+  <div class="note">Yahan badlo, Save dabao — app foran naya ho jayega. Dobara AI ko nahi kehna parega.</div>
+  <label>Dukaan / App ka naam (upar title me dikhega)</label><input id="stTitle" value="${String(SETTINGS.appTitle||"🧱 Tile Business Calculator").replace(/"/g,"&quot;")}">
+  <div class="row" style="margin-top:8px"><div><label>Dukaan ka naam (bill me)</label><input id="stShop" value="${String(SETTINGS.shopName||"").replace(/"/g,"&quot;")}"></div><div><label>Phone (bill me)</label><input id="stPhone" value="${String(SETTINGS.shopPhone||"").replace(/"/g,"&quot;")}"></div></div>
+  <label style="margin-top:8px">Apna Note (hisaab ke neechay dikhega)</label><input id="stNote" placeholder="jese: Rate 7 din ke liye valid hai" value="${String(SETTINGS.note||"").replace(/"/g,"&quot;")}">
+  <h2 style="margin:14px 0 6px">📌 Default Rate / Values (Save karte hi lagoo honge)</h2>
+  <div class="row"><div><label>Default Wastage %</label><input id="stWaste" type="number" value="${SETTINGS.defWaste||""}" placeholder="jese 10"></div><div><label>Default Box me Tiles</label><input id="stBox" type="number" value="${SETTINGS.defBox||""}" placeholder="jese 4"></div></div>
+  <div class="row"><div><label>Default Floor Rate (Rs/sqm)</label><input id="stRate" type="number" value="${SETTINGS.defRate||""}" placeholder="jese 2080"></div><div><label>Default Skirting Rate (Rs/sqm)</label><input id="stSkRate" type="number" value="${SETTINGS.defSkRate||""}" placeholder="jese 2080"></div></div>
+  <div class="row"><div><label>Default Skirting Tile Size</label><input id="stSkSize" value="${String(SETTINGS.defSkSize||"").replace(/"/g,"&quot;")}" placeholder="jese 24x48"></div><div><label>Default Skirting Height (inch)</label><input id="stSkH" type="number" value="${SETTINGS.defSkH||""}" placeholder="jese 4"></div></div>
+  <h2 style="margin:14px 0 6px">👁️ Section Chhupao / Dikhao</h2>
+  <label><input type="checkbox" id="stHideSkirt" ${SETTINGS.hideSkirt?"checked":""} style="width:auto"> Skirting section chhupao</label><br>
+  <label><input type="checkbox" id="stHidePanel" ${SETTINGS.hidePanel?"checked":""} style="width:auto"> Floor Panel (3A) chhupao</label><br>
+  <label><input type="checkbox" id="stHideNazara" ${SETTINGS.hideNazara?"checked":""} style="width:auto"> Nazara (Section 4) chhupao</label>
+  <h2 style="margin:14px 0 6px">➕ Extra Kharcha Add Karo (Mazdoori, Transport, Chemical...)</h2>
+  <div id="stExtras">${ex||'<div class="note">Abhi koi extra kharcha nahi. Neeche se add karo.</div>'}</div>
+  <button class="g" type="button" onclick="addExtraRow()" style="margin-top:6px">＋ Extra kharcha add karo</button>
+  <div style="display:flex;gap:8px;margin-top:14px;flex-wrap:wrap"><button type="button" onclick="saveSettings()">💾 Save — App Update Karo</button><button class="g" type="button" onclick="resetSettings()">↩ Sab Default Karo</button><button class="g" type="button" onclick="this.closest('div').parentElement.parentElement.remove();document.querySelectorAll('[data-setov]').forEach(e=>e.remove())">✕ Band Karo</button></div>
+  <div class="note" style="margin-top:8px">Setting isi mobile/browser me save hoti hai. Doosre mobile pe bhi chahiye to wahan bhi ek dafa yahi setting karni hogi.</div>
+  </div>`;
+  ov.setAttribute("data-setov","1");
+  document.body.appendChild(ov);
+  // Band Karo button ka parent fix: overlay ko hi remove kare
+  ov.querySelectorAll("button").forEach(b=>{if(b.textContent.includes("Band Karo"))b.onclick=()=>ov.remove()});
+}
+function addExtraRow(){
+  const box=document.getElementById("stExtras");if(!box)return;
+  const d=document.createElement("div");d.className="row";
+  d.innerHTML=`<div><input placeholder="Naam - jese Mazdoori"></div><div><input type="number" placeholder="Rs"></div><div style="flex:0 0 44px"><button class="g" type="button" onclick="this.closest('.row').remove()">✕</button></div>`;
+  box.appendChild(d);
+}
+function saveSettings(){
+  const g=id=>document.getElementById(id);
+  const extras=[...document.querySelectorAll("#stExtras .row")].map(r=>{const ins=r.querySelectorAll("input");return{name:ins[0]?ins[0].value.trim():"",amt:ins[1]?ins[1].value:""}}).filter(e=>e.name);
+  SETTINGS={appTitle:g("stTitle").value.trim(),shopName:g("stShop").value.trim(),shopPhone:g("stPhone").value.trim(),note:g("stNote").value.trim(),
+    defWaste:g("stWaste").value,defBox:g("stBox").value,defRate:g("stRate").value,defSkRate:g("stSkRate").value,defSkSize:g("stSkSize").value.trim(),defSkH:g("stSkH").value,
+    hideSkirt:g("stHideSkirt").checked,hidePanel:g("stHidePanel").checked,hideNazara:g("stHideNazara").checked,extras};
+  try{localStorage.setItem("tcsettings",JSON.stringify(SETTINGS))}catch(e){}
+  // Defaults foran lagoo karo
+  try{
+    if(SETTINGS.defWaste&&$("waste"))$("waste").value=SETTINGS.defWaste;
+    if(SETTINGS.defBox&&$("box"))$("box").value=SETTINGS.defBox;
+    if(SETTINGS.defRate&&$("rateSqm"))$("rateSqm").value=SETTINGS.defRate;
+    if(SETTINGS.defSkRate&&$("skRateSqm"))$("skRateSqm").value=SETTINGS.defSkRate;
+    if(SETTINGS.defSkSize&&$("skTileSize"))$("skTileSize").value=SETTINGS.defSkSize;
+    if(SETTINGS.defSkH&&$("sk")){const v=String(SETTINGS.defSkH);if(["4","6","8","12"].includes(v))$("sk").value=v;else{$("sk").value="c";if($("skv"))$("skv").value=v;}}
+  }catch(e){}
+  applySettings();
+  document.querySelectorAll('[data-setov]').forEach(e=>e.remove());
+  try{calc()}catch(e){}
+  alert("✅ Setting save ho gayi! App update ho gaya.");
+}
+function resetSettings(){
+  if(!confirm("Saari setting default kar dein?"))return;
+  try{localStorage.removeItem("tcsettings")}catch(e){}
+  SETTINGS={extras:[]};applySettings();
+  document.querySelectorAll('[data-setov]').forEach(e=>e.remove());
+  try{calc()}catch(e){}
+}
+applySettings();
+</script>
+
+<script>
+// ============ 🔐 FIREBASE ADMIN SYSTEM (Cloud) ============
+// Setting ab Cloud (Realtime Database) me save hoti hai.
+// Path: /tileCalculatorSettings  |  Read: sab | Write: sirf login Admin
+const FB_CONFIG={apiKey:"AIzaSyDClt5LXwxG-49gz2glQWSlzC5qWX3kEIM",authDomain:"apnarozgar-0.firebaseapp.com",databaseURL:"https://apnarozgar-0-default-rtdb.firebaseio.com",projectId:"apnarozgar-0",storageBucket:"apnarozgar-0.firebasestorage.app",messagingSenderId:"579094438381",appId:"1:579094438381:web:05f3a58ec925551b15c7e4",measurementId:"G-CENKY0K7EH"};
+let FB=null,FB_AUTH=null,FB_DB=null,FB_CLOUD_LOADED=false;
+try{
+  if(window.firebase&&!firebase.apps.length)firebase.initializeApp(FB_CONFIG);
+  FB=firebase.app();FB_AUTH=firebase.auth();FB_DB=firebase.database();
+}catch(e){console.log("Firebase init fail",e)}
+function setAdminState(){
+  try{
+    const u=FB_AUTH&&FB_AUTH.currentUser;
+    const el=document.getElementById("adminState");if(el)el.textContent=u?("✅ Admin: "+u.email):"";
+    const b=document.getElementById("adminBtn");if(b)b.textContent=u?"🔓 Admin (Logout)":"🔐 Admin";
+  }catch(e){}
+}
+function applyCloudSettings(cloud){
+  if(!cloud||typeof cloud!=="object")return;
+  SETTINGS=Object.assign({},SETTINGS,cloud);
+  if(!SETTINGS.extras)SETTINGS.extras=[];
+  try{localStorage.setItem("tcsettings",JSON.stringify(SETTINGS))}catch(e){}
+  applySettings();
+  try{calc()}catch(e){}
+}
+// Cloud se live setting suno - tum badlo, sab ke app me khud update
+try{
+  if(FB_DB){
+    FB_DB.ref("tileCalculatorSettings").on("value",snap=>{
+      const v=snap.val();FB_CLOUD_LOADED=true;
+      if(v)applyCloudSettings(v);
+    });
+    FB_AUTH.onAuthStateChanged(()=>setAdminState());
+  }
+}catch(e){}
+function openAdmin(){
+  try{
+    if(FB_AUTH&&FB_AUTH.currentUser){
+      if(confirm("Admin se logout karna hai?")){FB_AUTH.signOut().then(()=>{setAdminState();alert("Logout ho gaya.");});}
+      return;
+    }
+  }catch(e){}
+  const ov=document.createElement("div");
+  ov.style.cssText="position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:9999;padding:12px;box-sizing:border-box";
+  ov.setAttribute("data-setov","1");
+  ov.innerHTML=`<div style="max-width:480px;margin:60px auto;background:var(--card,#fff);color:var(--tx,#111);border-radius:12px;padding:16px">
+  <h2 style="margin:0 0 4px">🔐 Admin Login</h2>
+  <div class="note">Sirf tum login kar sakte ho. Login ke baad hi Setting Cloud me save hogi aur sab jagah lagegi.</div>
+  <label style="margin-top:10px">Admin Email</label><input id="adEmail" type="email" placeholder="tumhara@gmail.com">
+  <label style="margin-top:8px">Admin Password</label><input id="adPass" type="password" placeholder="••••••••">
+  <div style="display:flex;gap:8px;margin-top:12px"><button type="button" onclick="doAdminLogin()">Login</button><button class="g" type="button" onclick="this.closest('div').parentElement.parentElement.remove()">✕ Band</button></div>
+  <div class="note" style="margin-top:8px">Password sirf tumhe pata hona chahiye. Firebase → Authentication → Users me bana hota hai.</div></div>`;
+  document.body.appendChild(ov);
+  ov.querySelectorAll("button").forEach(b=>{if(b.textContent.includes("Band"))b.onclick=()=>ov.remove()});
+}
+function doAdminLogin(){
+  const em=document.getElementById("adEmail").value.trim(),pw=document.getElementById("adPass").value;
+  if(!em||!pw){alert("Email aur password likhein.");return;}
+  if(!FB_AUTH){alert("Firebase load nahi hua. Internet check karke dobara kholo.");return;}
+  FB_AUTH.signInWithEmailAndPassword(em,pw).then(()=>{setAdminState();document.querySelectorAll('[data-setov]').forEach(e=>e.remove());alert("✅ Admin login ho gaya! Ab ⚙️ Setting khol ke Save karo — wo sab jagah lag jayegi.");openSettings();})
+  .catch(err=>{alert("Login nahi hua: "+(err.message||err.code));});
+}
+// Setting save hote waqt Cloud me bhi bhejo (sirf Admin)
+const _oldSaveSettings=saveSettings;
+saveSettings=function(){
+  const isAdmin=FB_AUTH&&FB_AUTH.currentUser;
+  _oldSaveSettings();
+  if(isAdmin&&FB_DB){
+    FB_DB.ref("tileCalculatorSettings").set(JSON.parse(JSON.stringify(SETTINGS))).then(()=>{alert("☁️ Setting Cloud me bhi save ho gayi — ab sab ke app me lag jayegi.");}).catch(err=>{alert("Cloud save nahi hua: "+(err.message||err.code)+" — Rule check karo: write sirf login Admin ko hona chahiye.");});
+  }else if(!isAdmin){
+    alert("⚠️ Ye setting sirf is mobile pe save hui hai.\nSab jagah lagani hai to pehle 🔐 Admin se login karo, phir Setting → Save karo.");
+  }
+};
+setAdminState();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
 </body>
