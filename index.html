@@ -571,19 +571,19 @@ const imgBlock=t=>`<div style="margin-top:8px"><label>${TY[t][0]} tile ki image 
 
 function floorGrid(wIn,hIn,a,b,st){const c=document.createElement("canvas");c.width=Math.max(1,Math.round(wIn*st));c.height=Math.max(1,Math.round(hIn*st));const x=c.getContext("2d");
  x.fillStyle="#e4dac6";x.fillRect(0,0,c.width,c.height);
- for(let r=0;r*b<hIn-1e-9;r++)for(let q=0;q*a<wIn-1e-9;q++){x.save();x.beginPath();x.rect(q*a*st,r*b*st,a*st,b*st);x.clip();tileAt(x,"T",q*a*st,r*b*st,a*st,b*st,0);x.restore()}
+ if(a>0&&b>0&&Math.ceil(wIn/a)*Math.ceil(hIn/b)<=20000)for(let r=0;r*b<hIn-1e-9;r++)for(let q=0;q*a<wIn-1e-9;q++){x.save();x.beginPath();x.rect(q*a*st,r*b*st,a*st,b*st);x.clip();tileAt(x,"T",q*a*st,r*b*st,a*st,b*st,0);x.restore()}
  // Floor Accent Panels: window.__accents se, floor ke hi canvas pe draw (perspective + top dono me aa jayega)
  try{(window.__accents||[]).forEach(ac=>{if(!ac.im||!(ac.w>0)||!(ac.h>0))return;let pw=Math.min(ac.w,wIn),ph=Math.min(ac.h,hIn);let px=0,py=0;const pos=ac.pos||"center";if(pos==="center"){px=(wIn-pw)/2;py=(hIn-ph)/2}else if(pos==="left"){px=0;py=(hIn-ph)/2}else if(pos==="right"){px=wIn-pw;py=(hIn-ph)/2}else if(pos==="top"){px=(wIn-pw)/2;py=0}else if(pos==="bottom"){px=(wIn-pw)/2;py=hIn-ph}else if(pos==="tl"){px=0;py=0}else if(pos==="tr"){px=wIn-pw;py=0}else if(pos==="bl"){px=0;py=hIn-ph}else if(pos==="br"){px=wIn-pw;py=hIn-ph}drawCover(x,ac.im,px*st,py*st,pw*st,ph*st);x.strokeStyle="rgba(0,0,0,.4)";x.lineWidth=2;x.strokeRect(px*st,py*st,pw*st,ph*st)})}catch(e){}
  return c}
 function roomPersp(cv,L,W,skH){
  const [a,b]=tileIn();if(!(a>0&&b>0&&L>0&&W>0))return false;
  const Li=L*12,Wi=W*12,A=Math.min(Li,Wi),D=Math.max(Li,Wi),H=96,st=Math.min(6,1600/D),ta=Li<=Wi?a:b,tb=Li<=Wi?b:a;
- const FR=floorGrid(A,D,ta,tb,st),fw=FR.width,fh=FR.height;
+ if(Math.round(900*.97/A*H+28)>3500)return false;const FR=floorGrid(A,D,ta,tb,st),fw=FR.width,fh=FR.height;
  const tl=Math.max(a,b),tn=Math.min(a,b),sh=Math.min(skH,96); // skirting 96" tak, tile chorai pe cap nahilet strip=null;
- if(sh>0){strip=document.createElement("canvas");strip.width=Math.round(tl*st);strip.height=Math.round(tn*st);const _sk=window.__skirtImg;if(_sk){const _c=strip.getContext("2d");try{drawCover(_c,_sk,0,0,strip.width,strip.height)}catch(e){tileAt(_c,"T",0,0,strip.width,strip.height,0)}}else tileAt(strip.getContext("2d"),"T",0,0,strip.width,strip.height,0)}
+ if(sh>0){strip=document.createElement("canvas");strip.width=Math.max(1,Math.round(tl*st));strip.height=Math.max(1,Math.round(tn*st));const _sk=window.__skirtImg;if(_sk){const _c=strip.getContext("2d");try{drawCover(_c,_sk,0,0,strip.width,strip.height)}catch(e){tileAt(_c,"T",0,0,strip.width,strip.height,0)}}else tileAt(strip.getContext("2d"),"T",0,0,strip.width,strip.height,0)}
  const wtex=len=>{const c=document.createElement("canvas");c.width=Math.max(1,Math.round(len*st));c.height=Math.round(H*st);const x=c.getContext("2d");
   x.fillStyle="#f0ebe0";x.fillRect(0,0,c.width,c.height);
-  if(strip)for(let px=0;px<c.width;px+=strip.width){let _rem=Math.round(sh*st),_y=c.height;while(_rem>0){const _ch=Math.min(Math.round(tn*st),_rem);x.drawImage(strip,0,Math.round(tn*st)-_ch,strip.width,_ch,px,_y-_ch,strip.width,_ch);_y-=_ch;_rem-=_ch;}}
+  if(strip)for(let px=0;px<c.width;px+=strip.width){let _rem=Math.round(sh*st),_y=c.height;while(_rem>0){const _ch=Math.min(strip.height,_rem);x.drawImage(strip,0,strip.height-_ch,strip.width,_ch,px,_y-_ch,strip.width,_ch);_y-=_ch;_rem-=_ch;}}
   if(strip){x.strokeStyle="rgba(0,0,0,.35)";x.lineWidth=1.5;x.beginPath();x.moveTo(0,c.height-sh*st);x.lineTo(c.width,c.height-sh*st);x.stroke()}
   return c};
  const CW=900,mg=14,k=CW*.97/A,dc=Math.max(A,H)*.9,ey=H*.78,CH=Math.round(k*H+2*mg),cx=CW/2,cy=mg+k*(H-ey);
@@ -603,7 +603,7 @@ function roomPersp(cv,L,W,skH){
  [[[bx,tB],[bx,bB]],[[bx+A*sb,tB],[bx+A*sb,bB]],[[bx,tB],[bx+A*sb,tB]],[[bx,bB],[bx+A*sb,bB]],[[xl0,tN],[bx,tB]],[[xr0,tN],[bx+A*sb,tB]],[[xl0,bN],[bx,bB]],[[xr0,bN],[bx+A*sb,bB]]].forEach(l=>{ctx.beginPath();ctx.moveTo(l[0][0],l[0][1]);ctx.lineTo(l[1][0],l[1][1]);ctx.stroke()});
  return true}
 function roomTop(cv,L,W){const [a,b]=tileIn();if(!(a>0&&b>0&&L>0&&W>0))return false;
- const Li=L*12,Wi=W*12,pad=26,CW=900,st=(CW-2*pad)/Li,F=floorGrid(Li,Wi,a,b,st);
+ const Li=L*12,Wi=W*12,pad=26,CW=900,st=Math.min((CW-2*pad)/Li,2400/Wi),F=floorGrid(Li,Wi,a,b,st);
  cv.width=CW;cv.height=Math.round(F.height+2*pad);const x=cv.getContext("2d");x.fillStyle="#f6f3ec";x.fillRect(0,0,cv.width,cv.height);
  x.drawImage(F,pad,pad);x.strokeStyle="#4a3f35";x.lineWidth=3;x.strokeRect(pad,pad,F.width,F.height);
  x.fillStyle="#6b5d4f";x.font="bold 18px sans-serif";x.textAlign="center";x.textBaseline="middle";x.fillText(f2(L)+" ft",CW/2,pad/2);
@@ -618,7 +618,7 @@ window.TP={_busy:false,_pending:false,draw(){if(this._busy){this._pending=true;r
   h+=`<div class="room"><div class="rt"><b>${r.n||"Kamra "+(i+1)}</b><span>${f2(L)} × ${f2(Wd)} ft</span></div>`+vb("tpV"+i,"Kamray ka nazara")+`<details><summary style="cursor:pointer;color:var(--mu)">Upar se naqsha (tile ka layout)</summary>`+vb("tpT"+i,"Upar se")+`</details></div>`;
   jobs.push([i,L,Wd])});
  $("tPrev").innerHTML=h;
- jobs.forEach(([i,L,Wd])=>{roomPersp($("tpV"+i),L,Wd,skH);roomTop($("tpT"+i),L,Wd)})}catch(e){}finally{this._busy=false;if(this._pending){this._pending=false;setTimeout(()=>{try{this.draw()}catch(e){}},60)}}}};
+ jobs.forEach(([i,L,Wd])=>{if(!roomPersp($("tpV"+i),L,Wd,skH))$("tpV"+i).style.display="none";roomTop($("tpT"+i),L,Wd)})}catch(e){}finally{this._busy=false;if(this._pending){this._pending=false;setTimeout(()=>{try{this.draw()}catch(e){}},60)}}}};
 let stripeP=null;
 function stripe(ctx){if(!stripeP){const c=document.createElement("canvas");c.width=c.height=10;const x=c.getContext("2d");x.fillStyle="#f1d9b0";x.fillRect(0,0,10,10);x.strokeStyle="#c98a4b";x.lineWidth=3;x.beginPath();x.moveTo(0,10);x.lineTo(10,0);x.moveTo(-5,5);x.lineTo(5,-5);x.moveTo(5,15);x.lineTo(15,5);x.stroke();stripeP=ctx.createPattern(c,"repeat")}return stripeP}
 const FC={L:"#efe6d2",D:"#4a3f35",F:"#9aa5ad",T:"#e4dac6"};TY.T=["Is","#e4dac6"];
@@ -632,7 +632,7 @@ function paintWall(ctx,i,o,sc,x0,y0){
  const {H,tw,th,rows,rt,rot}=o,w=S.walls[i],W0=wlen(o,i),dw=(+w.dw||0)*K[S.u]*12,dh=(+w.dh||0)*K[S.u]*12;
  ctx.save();ctx.beginPath();ctx.rect(x0,y0,W0*sc,H*sc);ctx.clip();
  ctx.fillStyle="#e6e1d6";ctx.fillRect(x0,y0,W0*sc,H*sc);
- if(w.m!="N")for(let r=0;r<rows;r++){const t=w.m=="P"?rt[r]:w.m;if(t=="N")continue;
+ if(w.m!="N"&&rows*Math.ceil(W0/tw)<=30000)for(let r=0;r<rows;r++){const t=w.m=="P"?rt[r]:w.m;if(t=="N")continue;
   const eff=(dh<=0||r*th<dh-1e-9)?W0-dw:W0;if(eff<=0)continue;
   const ry=y0+H*sc-(r+1)*th*sc;
   ctx.save();ctx.beginPath();ctx.rect(x0,ry,eff*sc,th*sc);ctx.clip();
@@ -647,7 +647,7 @@ function paintWall(ctx,i,o,sc,x0,y0){
  ctx.restore()}
 function floorTex(o,st){const c=document.createElement("canvas");c.width=Math.max(1,Math.round(o.Li*st));c.height=Math.max(1,Math.round(o.Wi*st));const ctx=c.getContext("2d");
  ctx.fillStyle="#e6e1d6";ctx.fillRect(0,0,c.width,c.height);
- const {fw,fh}=o;if(S.fl!="N"&&fw>0&&fh>0)for(let r=0;r*fh<o.Wi-1e-9;r++)for(let q=0;q*fw<o.Li-1e-9;q++)tileAt(ctx,S.fl,q*fw*st,r*fh*st,fw*st,fh*st,0);
+ const {fw,fh}=o;if(S.fl!="N"&&fw>0&&fh>0&&Math.ceil(o.Li/fw)*Math.ceil(o.Wi/fh)<=20000)for(let r=0;r*fh<o.Wi-1e-9;r++)for(let q=0;q*fw<o.Li-1e-9;q++)tileAt(ctx,S.fl,q*fw*st,r*fh*st,fw*st,fh*st,0);
  return c}
 // flat (khula hua) naqsha
 function drawRoom(cv,o){
@@ -995,6 +995,35 @@ setAdminState=function(){
     else if(!_adminUnlocked){hideAdminButtons();}
   }catch(e){}
 };
+</script>
+<script>
+// ============ ✅ INPUT GUARD (hang se bachao) ============
+// Kisi bhi number box mein ghalat/bohat bari value likhi to alert aayega aur wo box khaali ho jayega.
+(function(){
+  const FT={ft:1,in:1/12,m:3.28084,cm:1/30.48,mm:1/304.8};
+  const IN={in:1,cm:1/2.54,mm:1/25.4,ft:12,m:39.3701};
+  function limit(el){
+    const oi=el.getAttribute("oninput")||"";let m;
+    try{
+      if(m=oi.match(/^upd\((\d+),'([lw])'/)){const r=rooms[+m[1]],f=FT[r&&r[m[2]+"u"]]||1;return{max:500/f,txt:"500 feet"}}
+      if(m=oi.match(/^W\.set\('(L|W|H)'/)){const u=document.querySelector("#wTop select"),f=FT[u&&u.value]||1,ft=m[1]=="H"?50:500;return{max:ft/f,txt:ft+" feet"}}
+      if(/^W\.set\('(sz|fsz)\.(cw|ch)'/.test(oi))return{max:200,txt:"200 inch"};
+      if(/^W\.set\('pat\.\d+\.r'/.test(oi))return{max:500,txt:"500 rows"};
+      if(el.id=="cw"||el.id=="ch"){const u=document.getElementById("cu"),f=IN[u&&u.value]||1;return{max:200/f,txt:"200 inch"}}
+    }catch(e){}
+    return{max:100000,txt:"100000"};
+  }
+  document.addEventListener("input",function(e){
+    const el=e.target;
+    if(!el||el.tagName!=="INPUT"||el.type!=="number")return;
+    const v=el.value;if(v==="")return;
+    const n=Number(v),L=limit(el);
+    if(!isFinite(n)||n<0||n>L.max){
+      el.value="";
+      try{alert("⚠️ Ye value sahi nahi hai ("+(n<0?"minus nahi likh sakte":"bohat bari hai, max "+L.txt)+"). Dobara sahi value likhein.")}catch(x){}
+    }
+  },true);
+})();
 </script>
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
 </body>
