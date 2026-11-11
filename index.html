@@ -1025,6 +1025,110 @@ setAdminState=function(){
   },true);
 })();
 </script>
+<script>
+// ============ 🛠 ADMIN STUDIO (full control: tabs, functions, sizes, css, js) ============
+// Data Firebase path: /tileCalculatorConfig  (read: sab | write: sirf admin — rules zaroor lagayein)
+(function(){
+const KEY="tcconfig",P0=P.length,DEF=()=>({tabs:[],builtin:{},sizes:"",css:"",js:""});
+let CFG=DEF(),DRAFT=null,jsRan=false,active=null;
+try{CFG=Object.assign(DEF(),JSON.parse(localStorage.getItem(KEY)||"{}"))}catch(e){}
+const esc=s=>String(s==null?"":s).replace(/&/g,"&amp;").replace(/"/g,"&quot;").replace(/</g,"&lt;");
+const clone=o=>JSON.parse(JSON.stringify(o));
+const admin=()=>typeof FB_AUTH!=="undefined"&&FB_AUTH&&FB_AUTH.currentUser;
+const opts=s=>String(s||"").split(",").map(x=>x.trim()).filter(Boolean).map(x=>{const i=x.lastIndexOf(":");return i<0?[x,x]:[x.slice(0,i).trim(),x.slice(i+1).trim()]});
+const num=(n,d)=>(Math.round(n*Math.pow(10,d))/Math.pow(10,d)).toLocaleString(undefined,{maximumFractionDigits:d});
+
+function env(t){const v={};document.querySelectorAll("#tab-"+t.id+" [data-k]").forEach(e=>v[e.dataset.k]=+e.value||0);
+ v.area_sqm=+($("bondArea")&&$("bondArea").value)||0;v.rate_sqm=+($("rateSqm")&&$("rateSqm").value)||0;v.waste=+($("waste")&&$("waste").value)||0;return v}
+function ev(x,v){try{const k=Object.keys(v);return new Function(...k,"ceil","floor","round","max","min","abs","sqrt","pow","return ("+x+")")(...k.map(a=>v[a]),Math.ceil,Math.floor,Math.round,Math.max,Math.min,Math.abs,Math.sqrt,Math.pow)}catch(e){return NaN}}
+function calc(id){const t=(CFG.tabs||[]).find(x=>x.id==id),o=$("cfgout-"+id);if(!t||!o)return;const v=env(t);
+ o.innerHTML=(t.results||[]).map(r=>{const n=ev(r.formula,v);const s=isFinite(n)?(r.prefix||"")+num(n,r.dec==null||r.dec===""?2:+r.dec)+(r.suffix?" "+r.suffix:""):"—";
+  return `<div class="res"><span>${esc(r.label)}</span><b class="${r.big?"big":""}">${esc(s)}</b></div>`}).join("")||'<div class="note">Koi result nahi</div>'}
+function render(t){let h=`<div class="card"><h2>${esc(t.icon)} ${esc(t.title)}</h2>`;
+ if(t.note)h+=`<div class="note" style="margin:0 0 8px">${esc(t.note)}</div>`;
+ (t.fields||[]).forEach(f=>{h+=`<label>${esc(f.label)}</label>`;
+  if(f.type=="select")h+=`<select data-k="${esc(f.key)}" onchange="CFGX.calc('${t.id}')">`+opts(f.options).map(o=>`<option value="${esc(o[1])}" ${o[1]==f.def?"selected":""}>${esc(o[0])}</option>`).join("")+`</select>`;
+  else h+=`<input type="number" inputmode="decimal" data-k="${esc(f.key)}" value="${esc(f.def)}" oninput="CFGX.calc('${t.id}')">`;
+  h+=`<div style="height:8px"></div>`});
+ return h+`</div><div class="card" id="cfgout-${t.id}"></div>`}
+function show(id){document.querySelectorAll(".tab-btn").forEach(b=>b.classList.toggle("active",b.dataset.cfg==id));
+ document.querySelectorAll(".tab-content").forEach(c=>c.classList.toggle("active",c.id=="tab-"+id));active=id;calc(id)}
+
+function apply(){try{
+ let st=$("cfgCss");if(!st){st=document.createElement("style");st.id="cfgCss";document.head.appendChild(st)}
+ st.textContent=".navbar{overflow-x:auto}.tab-btn{white-space:nowrap}"+(CFG.css||"");
+ const keep=active;document.querySelectorAll("[data-cfg]").forEach(e=>e.remove());
+ const bt=document.querySelectorAll(".tab-btn");
+ ["tiles","bond","wash"].forEach((id,i)=>{const b=(CFG.builtin||{})[id]||{},e=bt[i];if(!e)return;if(!e.dataset.orig)e.dataset.orig=e.textContent;e.textContent=b.title||e.dataset.orig;e.style.display=b.hide?"none":""});
+ let last=$("tab-wash"),nav=document.querySelector(".navbar");
+ (CFG.tabs||[]).forEach(t=>{if(t.hide||!t.id)return;
+  const b=document.createElement("button");b.className="tab-btn";b.dataset.cfg=t.id;b.textContent=((t.icon||"")+" "+(t.title||"Tab")).trim();b.onclick=()=>show(t.id);nav.appendChild(b);
+  const d=document.createElement("div");d.id="tab-"+t.id;d.className="tab-content";d.dataset.cfg=t.id;d.innerHTML=render(t);last.after(d);last=d;calc(t.id)});
+ if(keep&&$("tab-"+keep))show(keep);
+ P.length=P0;String(CFG.sizes||"").split("\n").forEach(l=>{const a=l.split(",").map(x=>x.trim());if(a[0]&&+a[1]>0&&+a[2]>0)P.push([a[0],+a[1],+a[2]])});
+ const p=$("preset"),cur=p.value;p.innerHTML=P.map((x,i)=>`<option value="${i}">${x[0]}</option>`).join("")+`<option value="c">Custom size</option>`;p.value=cur;if(p.value!==cur)p.value="1";
+ try{calc0()}catch(e){}
+ if(CFG.js&&!jsRan){jsRan=true;try{new Function(CFG.js)()}catch(e){console.log("Custom JS error",e)}}
+}catch(e){console.log("studio apply",e)}}
+const calc0=()=>window.calc&&window.calc();
+
+// ---------- Admin editor ----------
+const A={
+ open(){if(!admin()){openAdmin();return}DRAFT=clone(CFG);DRAFT.tabs=DRAFT.tabs||[];DRAFT.builtin=DRAFT.builtin||{};A.draw(true)},
+ draw(first){let ov=$("studioOv");if(!ov){ov=document.createElement("div");ov.id="studioOv";ov.style.cssText="position:fixed;inset:0;background:var(--bg);z-index:10000;overflow:auto;padding:12px";document.body.appendChild(ov)}
+  const sc=ov.scrollTop,D=DRAFT;
+  const inp=(p,v,ph,t)=>`<input ${t?`type="${t}"`:""} value="${esc(v)}" placeholder="${esc(ph||"")}" oninput="ADM.s('${p}',this.value)">`;
+  let h=`<div style="max-width:680px;margin:auto"><div style="display:flex;justify-content:space-between;align-items:center"><h1>🛠 Admin Studio</h1><button class="g" onclick="ADM.close()">✕ Band</button></div>
+  <div class="note">Yahan se app me kuch bhi add/edit karo. Aakhir me <b>💾 Save</b> dabao — sab devices me update ho jayega.</div>
+  <div class="card"><h2>1. Maujooda Tabs (naam badlo / chhupao)</h2>`+[["tiles","Tiles Calculator"],["bond","Bond Calculator"],["wash","🚿 Washroom"]].map(([k,n])=>{const b=D.builtin[k]||{};return `<div class="row"><div>${inp("builtin."+k+".title",b.title,n)}</div><div style="flex:0 0 auto"><label style="display:flex;gap:4px;align-items:center;margin:10px 0 0"><input type="checkbox" style="width:auto" ${b.hide?"checked":""} onchange="ADM.s('builtin.${k}.hide',this.checked)"> chhupao</label></div></div>`}).join("")+`</div>
+  <div class="card"><h2>2. Naye Tabs / Calculators</h2>`;
+  D.tabs.forEach((t,i)=>{t.fields=t.fields||[];t.results=t.results||[];
+   h+=`<div class="room"><div class="row"><div style="flex:0 0 60px">${inp(`tabs.${i}.icon`,t.icon,"🧮")}</div><div>${inp(`tabs.${i}.title`,t.title,"Tab ka naam")}</div></div>
+   ${inp(`tabs.${i}.note`,t.note,"Hidayat / note (optional)")}
+   <label style="margin-top:8px"><input type="checkbox" style="width:auto" ${t.hide?"checked":""} onchange="ADM.s('tabs.${i}.hide',this.checked)"> Is tab ko chhupao</label>
+   <div class="note"><b>Inputs (fields)</b></div>`+t.fields.map((f,j)=>`<div class="room"><div class="row"><div>${inp(`tabs.${i}.fields.${j}.label`,f.label,"Label, jese Lambai")}</div><div style="flex:0 0 90px">${inp(`tabs.${i}.fields.${j}.key`,f.key,"naam: a")}</div></div>
+    <div class="row"><div><select onchange="ADM.s('tabs.${i}.fields.${j}.type',this.value)"><option value="number" ${f.type!="select"?"selected":""}>Number</option><option value="select" ${f.type=="select"?"selected":""}>Dropdown</option></select></div><div>${inp(`tabs.${i}.fields.${j}.def`,f.def,"default value")}</div></div>
+    ${f.type=="select"?inp(`tabs.${i}.fields.${j}.options`,f.options,"Naam:value, Naam2:value2"):""}
+    <span onclick="ADM.del(${i},'fields',${j})" style="color:#c33;cursor:pointer;font-size:13px">✕ field hatao</span></div>`).join("")+`<button class="g" onclick="ADM.add(${i},'fields')">＋ Input add</button>
+   <div class="note" style="margin-top:10px"><b>Results (formula)</b> — field ka <i>naam</i> use karo. Extra: area_sqm, rate_sqm, waste. Functions: ceil floor round max min abs sqrt pow</div>`+t.results.map((r,j)=>`<div class="room">${inp(`tabs.${i}.results.${j}.label`,r.label,"Result ka naam")}
+    <div style="height:6px"></div>${inp(`tabs.${i}.results.${j}.formula`,r.formula,"jese ceil(a*b/c)")}
+    <div class="row" style="margin-top:6px"><div>${inp(`tabs.${i}.results.${j}.prefix`,r.prefix,"Pehle: Rs")}</div><div>${inp(`tabs.${i}.results.${j}.suffix`,r.suffix,"Baad me: sqm")}</div><div>${inp(`tabs.${i}.results.${j}.dec`,r.dec,"decimals","number")}</div></div>
+    <label><input type="checkbox" style="width:auto" ${r.big?"checked":""} onchange="ADM.s('tabs.${i}.results.${j}.big',this.checked)"> bara dikhao</label>
+    <span onclick="ADM.del(${i},'results',${j})" style="color:#c33;cursor:pointer;font-size:13px">✕ result hatao</span></div>`).join("")+`<button class="g" onclick="ADM.add(${i},'results')">＋ Result add</button>
+   <div style="margin-top:10px;text-align:right"><span onclick="ADM.del(${i})" style="color:#c33;cursor:pointer">🗑 Ye poora tab hatao</span></div></div>`});
+  h+=`<button onclick="ADM.add()">＋ Naya Tab</button></div>
+  <div class="card"><h2>3. Extra Tile Sizes</h2><div class="note" style="margin:0 0 6px">Har line: <code>Naam, lambai, chorai</code> (inch). Jese: <code>18x36 inch, 18, 36</code></div><textarea rows="4" style="width:100%;font-size:14px" oninput="ADM.s('sizes',this.value)">${esc(D.sizes)}</textarea></div>
+  <div class="card"><h2>4. Advanced — Custom CSS / Code</h2><div class="note" style="margin:0 0 6px">CSS: rang, font, design badlo.</div><textarea rows="4" style="width:100%;font-family:monospace;font-size:13px" oninput="ADM.s('css',this.value)">${esc(D.css)}</textarea>
+  <div class="note" style="margin:10px 0 6px">JavaScript: naya function/button/koi bhi logic. Sab users ke app me app khulte hi chalega (⚠️ galat code app tora sakta hai — pehle test karo). Reload par apply hota hai.</div><textarea rows="6" style="width:100%;font-family:monospace;font-size:13px" oninput="ADM.s('js',this.value)">${esc(D.js)}</textarea></div>
+  <div class="card"><h2>5. Backup</h2><textarea id="studioJson" rows="4" style="width:100%;font-family:monospace;font-size:12px"></textarea><div style="display:flex;gap:8px;margin-top:8px"><button class="g" onclick="ADM.exp()">⬇ Export</button><button class="g" onclick="ADM.imp()">⬆ Import</button></div></div>
+  <div style="display:flex;gap:8px;position:sticky;bottom:0;padding:10px 0;background:var(--bg)"><button style="flex:1" onclick="ADM.save()">💾 Save — Sab me Update</button><button class="g" onclick="ADM.close()">Cancel</button></div></div>`;
+  ov.innerHTML=h;ov.scrollTop=first?0:sc},
+ s(p,v){const k=p.split(".");let o=DRAFT;for(let i=0;i<k.length-1;i++){if(o[k[i]]==null)o[k[i]]={};o=o[k[i]]}o[k[k.length-1]]=v},
+ add(i,w){if(w==null){DRAFT.tabs.push({id:"t"+Date.now().toString(36),icon:"🧮",title:"Naya Tab",fields:[],results:[]})}
+  else if(w=="fields"){const n=DRAFT.tabs[i].fields.length;DRAFT.tabs[i].fields.push({key:"f"+(n+1),label:"",type:"number",def:""})}
+  else DRAFT.tabs[i].results.push({label:"",formula:"",dec:2});A.draw()},
+ del(i,w,j){if(w==null){if(!confirm("Poora tab hata den?"))return;DRAFT.tabs.splice(i,1)}else DRAFT.tabs[i][w].splice(j,1);A.draw()},
+ exp(){$("studioJson").value=JSON.stringify(DRAFT)},
+ imp(){try{const o=JSON.parse($("studioJson").value);DRAFT=Object.assign(DEF(),o);A.draw(true)}catch(e){alert("JSON sahi nahi hai")}},
+ close(){const o=$("studioOv");if(o)o.remove()},
+ save(){const D=clone(DRAFT);
+  D.tabs.forEach(t=>{(t.fields||[]).forEach((f,n)=>{f.key=String(f.key||"").replace(/[^a-zA-Z0-9_]/g,"_");if(!f.key||/^\d/.test(f.key))f.key="f"+(n+1)})});
+  CFG=Object.assign(DEF(),D);try{localStorage.setItem(KEY,JSON.stringify(CFG))}catch(e){}
+  apply();
+  if(typeof FB_DB!=="undefined"&&FB_DB&&admin())FB_DB.ref("tileCalculatorConfig").set(clone(CFG)).then(()=>{alert("☁️ Save ho gaya — ab sab devices me update ho jayega.");A.close()}).catch(e=>alert("Cloud save nahi hua: "+e.message+"\n(Firebase Rules check karein)"));
+  else alert("Sirf is phone pe save hua. Cloud ke liye admin login karein.")}
+};
+window.ADM=A;window.CFGX={calc,show,apply,get:()=>CFG};
+
+// ---------- Button + cloud sync ----------
+try{const hd=$("adminBtn"),b=document.createElement("button");b.id="studioBtn";b.textContent="🛠 Studio";b.style.cssText="white-space:nowrap;display:none;background:#0d6efd;color:#fff";b.onclick=A.open;hd.after(b);
+ const upd=()=>{b.style.display=admin()?"":"none"};
+ if(typeof FB_AUTH!=="undefined"&&FB_AUTH)FB_AUTH.onAuthStateChanged(upd);
+ if(typeof FB_DB!=="undefined"&&FB_DB)FB_DB.ref("tileCalculatorConfig").on("value",s=>{const v=s.val();if(v){CFG=Object.assign(DEF(),v);try{localStorage.setItem(KEY,JSON.stringify(CFG))}catch(e){}apply()}})}catch(e){}
+apply();
+})();
+</script>
+
 <script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
 </body>
 </html>
