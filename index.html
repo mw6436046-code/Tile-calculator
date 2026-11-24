@@ -1167,7 +1167,26 @@ apply();
 </script>
 
 <script>
-/* Auto-update: app kholte hi naya version check hota hai, naya mila to khud reload ho jata hai */
+/* Auto-update: app kholte/wapis aate hi naya version check hota hai, naya mila to khud reload ho jata hai */
+const APP_VERSION="2026-11-24-c";
+function checkNewVersion(){
+  if(navigator.onLine===false)return;
+  fetch("index.html",{cache:"no-store"}).then(r=>r.ok?r.text():"").then(t=>{
+    const m=t.match(/APP_VERSION\s*=\s*"([^"]+)"/);
+    if(!m||m[1]===APP_VERSION)return;
+    let tried="";try{tried=sessionStorage.getItem("tc_upd_try")||""}catch(e){}
+    if(tried===m[1])return;
+    try{sessionStorage.setItem("tc_upd_try",m[1])}catch(e){}
+    try{saveNow()}catch(e){}
+    location.reload();
+  }).catch(()=>{});
+}
+setTimeout(checkNewVersion,800);
+document.addEventListener("visibilitychange",()=>{if(!document.hidden)checkNewVersion()});
+window.addEventListener("pageshow",e=>{if(e.persisted)checkNewVersion()});
+window.addEventListener("online",checkNewVersion);
+window.addEventListener("focus",checkNewVersion);
+setInterval(checkNewVersion,60000);
 if("serviceWorker" in navigator){
   const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
   navigator.serviceWorker.addEventListener("controllerchange",()=>{

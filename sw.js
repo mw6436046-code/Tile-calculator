@@ -1,4 +1,4 @@
-const C="tile-calc-v32",F=["./","./index.html","./manifest.json","./icon-192.png","./icon-512.png"];
+const C="tile-calc-v33",F=["./","./index.html","./manifest.json","./icon-192.png","./icon-512.png"];
 self.addEventListener("install",e=>{
   e.waitUntil(caches.open(C).then(c=>Promise.all(F.map(u=>fetch(u,{cache:"reload"}).then(r=>{if(r&&r.ok)return c.put(u,r)}).catch(()=>{})))));
   self.skipWaiting();
