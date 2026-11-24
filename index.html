@@ -443,7 +443,7 @@ function openAccentCrop(i,imgObj){
   };start()
 }
 refreshAccentImgs();
-function resetAll(){if(confirm("Sab kuch saaf kar dein?")){localStorage.removeItem("tc");location.reload()}}
+function resetAll(){if(confirm("Sab tabs ki saari entries saaf kar dein? (kamre, hisaab, washroom, tile images, skirting, panels)")){try{["tc","tcw","tcwi","tcskirt","tcaccents"].forEach(k=>localStorage.removeItem(k));localStorage.setItem("tc_clean","1")}catch(e){}location.reload()}}
 {const _c=calc;let _tpT=null,_lastTP="";
 calc=function(){
   _c();
@@ -1166,6 +1166,23 @@ apply();
 })();
 </script>
 
-<script>if("serviceWorker" in navigator){window.addEventListener("load",()=>navigator.serviceWorker.register("sw.js").catch(()=>{}))}</script>
+<script>
+/* Auto-update: app kholte hi naya version check hota hai, naya mila to khud reload ho jata hai */
+if("serviceWorker" in navigator){
+  const hadCtl=!!navigator.serviceWorker.controller;let reloaded=false;
+  navigator.serviceWorker.addEventListener("controllerchange",()=>{
+    if(!hadCtl||reloaded)return;reloaded=true;
+    try{saveNow()}catch(e){}
+    location.reload();
+  });
+  window.addEventListener("load",()=>{
+    navigator.serviceWorker.register("sw.js",{updateViaCache:"none"}).then(reg=>{
+      reg.update().catch(()=>{});
+      document.addEventListener("visibilitychange",()=>{if(!document.hidden)reg.update().catch(()=>{})});
+      setInterval(()=>reg.update().catch(()=>{}),60000);
+    }).catch(()=>{});
+  });
+}
+</script>
 </body>
 </html>
